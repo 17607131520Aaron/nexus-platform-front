@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -17,54 +17,8 @@ import {
   Tag,
   Typography,
 } from "antd";
-
-type ModuleKind = "site" | "cms" | "tool";
-
-type ModuleEntry = {
-  key: string;
-  name: string;
-  description: string;
-  kind: ModuleKind;
-  tags?: string[];
-  href: string;
-  openInNewTab?: boolean;
-};
-
-const MODULES: ModuleEntry[] = [
-  {
-    key: "crm",
-    name: "企业内容管理系统",
-    description: "左侧菜单导航，右侧内容区，用于企业级内容/配置管理。",
-    kind: "cms",
-    tags: ["企业", "后台", "Layout"],
-    href: "crm",
-  },
-  {
-    key: "ops",
-    name: "运维控制台",
-    description: "常用运维功能聚合：环境、发布、监控与告警。",
-    kind: "tool",
-    tags: ["工具", "内部"],
-    href: "ops",
-  },
-  {
-    key: "workspace",
-    name: "工作台",
-    description: "团队日常工作入口：消息、任务、常用链接与快捷操作。",
-    kind: "tool",
-    tags: ["工具", "协作"],
-    href: "workspace",
-  },
-  {
-    key: "portal",
-    name: "门户站点",
-    description: "面向用户的站点入口（示例：外部站点/独立域名）。",
-    kind: "site",
-    tags: ["站点", "外部"],
-    href: "https://nextjs.org/docs/app/getting-started/installation",
-    openInNewTab: true,
-  },
-];
+import type { ModuleEntry, ModuleKind } from "@/services/modules";
+import { fetchModules } from "@/api/modules";
 
 const KIND_LABEL: Record<ModuleKind, string> = {
   site: "站点",
@@ -75,17 +29,26 @@ const KIND_LABEL: Record<ModuleKind, string> = {
 export default function HomePage() {
   const [keyword, setKeyword] = useState("");
   const [kind, setKind] = useState<"all" | ModuleKind>("all");
+  const [modules, setModules] = useState<ModuleEntry[]>([]);
+
+  useEffect(() => {
+    fetchModules()
+      .then(setModules)
+      .catch(() => {
+        setModules([]);
+      });
+  }, []);
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
-    return MODULES.filter((m) => {
+    return modules.filter((m) => {
       if (kind !== "all" && m.kind !== kind) return false;
       if (!kw) return true;
       const hay =
         `${m.name} ${m.description} ${(m.tags ?? []).join(" ")}`.toLowerCase();
       return hay.includes(kw);
     });
-  }, [keyword, kind]);
+  }, [keyword, kind, modules]);
 
   return (
     <Layout style={{ height: "100%", background: "#0b1220" }}>
@@ -153,10 +116,7 @@ export default function HomePage() {
         <Row gutter={[16, 16]}>
           {filtered.length === 0 ? (
             <Col span={24}>
-              <Card
-                bordered={false}
-                style={{ background: "rgba(255,255,255,.06)" }}
-              >
+              <Card style={{ background: "rgba(255,255,255,.06)" }}>
                 <Empty
                   description={
                     <span style={{ color: "rgba(230,240,255,.72)" }}>
