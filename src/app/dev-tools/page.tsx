@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-const DevToolsPages=()=>{
-  return <div>工程师调试工具</div>
+export default function DevToolsIndexPage() {
+  redirect("/dev-tools/home");
 }
-
-export default DevToolsPages;
