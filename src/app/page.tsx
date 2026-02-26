@@ -1,65 +1,220 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Divider,
+  Empty,
+  Input,
+  Layout,
+  Row,
+  Segmented,
+  Space,
+  Tag,
+  Typography,
+} from "antd";
+
+type ModuleKind = "site" | "cms" | "tool";
+
+type ModuleEntry = {
+  key: string;
+  name: string;
+  description: string;
+  kind: ModuleKind;
+  tags?: string[];
+  href: string;
+  openInNewTab?: boolean;
+};
+
+const MODULES: ModuleEntry[] = [
+  {
+    key: "cms",
+    name: "企业内容管理系统",
+    description: "左侧菜单导航，右侧内容区，用于企业级内容/配置管理。",
+    kind: "cms",
+    tags: ["企业", "后台", "Layout"],
+    href: "/m/cms",
+  },
+  {
+    key: "portal",
+    name: "门户站点",
+    description: "面向用户的站点入口（示例：外部站点/独立域名）。",
+    kind: "site",
+    tags: ["站点", "外部"],
+    href: "https://nextjs.org/docs/app/getting-started/installation",
+    openInNewTab: true,
+  },
+  {
+    key: "ops",
+    name: "运维控制台",
+    description: "常用运维功能聚合：环境、发布、监控与告警。",
+    kind: "tool",
+    tags: ["工具", "内部"],
+    href: "/m/ops",
+  },
+  {
+    key: "workspace",
+    name: "工作台",
+    description: "团队日常工作入口：消息、任务、常用链接与快捷操作。",
+    kind: "tool",
+    tags: ["工具", "协作"],
+    href: "/m/workspace",
+  },
+];
+
+const KIND_LABEL: Record<ModuleKind, string> = {
+  site: "站点",
+  cms: "企业系统",
+  tool: "工具",
+};
+
+export default function HomePage() {
+  const [keyword, setKeyword] = useState("");
+  const [kind, setKind] = useState<"all" | ModuleKind>("all");
+
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    return MODULES.filter((m) => {
+      if (kind !== "all" && m.kind !== kind) return false;
+      if (!kw) return true;
+      const hay = `${m.name} ${m.description} ${(m.tags ?? []).join(" ")}`.toLowerCase();
+      return hay.includes(kw);
+    });
+  }, [keyword, kind]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <Layout style={{ height: "100%", background: "#0b1220" }}>
+      <Layout.Header
+        style={{
+          background: "transparent",
+          padding: "16px 20px",
+          height: "auto",
+        }}
+      >
+        <Row gutter={[16, 16]} align="middle">
+          <Col flex="auto">
+            <Space orientation="vertical" size={2}>
+              <Typography.Title level={3} style={{ margin: 0, color: "#e6f0ff" }}>
+                Nexus Platform
+              </Typography.Title>
+              <Typography.Text style={{ color: "rgba(230,240,255,.72)" }}>
+                选择一个模块进入：可以是独立站点，也可以是“左菜单 + 右内容”的企业系统。
+              </Typography.Text>
+            </Space>
+          </Col>
+          <Col>
+            <Space>
+              <Button ghost>模块管理（占位）</Button>
+              <Button type="primary">新增模块（占位）</Button>
+            </Space>
+          </Col>
+        </Row>
+
+        <Divider style={{ margin: "16px 0", borderColor: "rgba(255,255,255,.12)" }} />
+
+        <Row gutter={[12, 12]} align="middle">
+          <Col flex="auto">
+            <Input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="搜索模块名称 / 描述 / 标签"
+              allowClear
+              size="large"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </Col>
+          <Col>
+            <Segmented
+              size="large"
+              value={kind}
+              onChange={(v) => setKind(v as typeof kind)}
+              options={[
+                { label: "全部", value: "all" },
+                { label: "站点", value: "site" },
+                { label: "企业系统", value: "cms" },
+                { label: "工具", value: "tool" },
+              ]}
+            />
+          </Col>
+        </Row>
+      </Layout.Header>
+
+      <Layout.Content style={{ padding: "0 20px 20px", overflow: "auto" }}>
+        <Row gutter={[16, 16]}>
+          {filtered.length === 0 ? (
+            <Col span={24}>
+              <Card bordered={false} style={{ background: "rgba(255,255,255,.06)" }}>
+                <Empty
+                  description={<span style={{ color: "rgba(230,240,255,.72)" }}>没有匹配的模块</span>}
+                />
+              </Card>
+            </Col>
+          ) : null}
+
+          {filtered.map((m) => (
+            <Col key={m.key} xs={24} sm={12} lg={8} xl={6}>
+              <Badge.Ribbon text={KIND_LABEL[m.kind]} color={m.kind === "cms" ? "geekblue" : "cyan"}>
+                <Card
+                  hoverable
+                  styles={{
+                    body: { minHeight: 150, display: "flex", flexDirection: "column", gap: 10 },
+                  }}
+                  style={{
+                    background: "rgba(255,255,255,.06)",
+                    borderColor: "rgba(255,255,255,.10)",
+                  }}
+                >
+                  <Space orientation="vertical" size={6} style={{ flex: 1 }}>
+                    <Typography.Title level={5} style={{ margin: 0, color: "#e6f0ff" }}>
+                      {m.name}
+                    </Typography.Title>
+                    <Typography.Paragraph
+                      style={{ margin: 0, color: "rgba(230,240,255,.72)" }}
+                      ellipsis={{ rows: 2 }}
+                    >
+                      {m.description}
+                    </Typography.Paragraph>
+                    <Space size={[6, 6]} wrap>
+                      {(m.tags ?? []).map((t) => (
+                        <Tag
+                          key={t}
+                          style={{
+                            background: "rgba(255,255,255,.08)",
+                            borderColor: "rgba(255,255,255,.14)",
+                            color: "rgba(230,240,255,.82)",
+                          }}
+                        >
+                          {t}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </Space>
+
+                  <Divider style={{ margin: "6px 0", borderColor: "rgba(255,255,255,.10)" }} />
+
+                  {m.openInNewTab ? (
+                    <a
+                      href={m.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "#8ab4ff", fontWeight: 600 }}
+                    >
+                      打开模块 →
+                    </a>
+                  ) : (
+                    <Link href={m.href} style={{ color: "#8ab4ff", fontWeight: 600 }}>
+                      进入模块 →
+                    </Link>
+                  )}
+                </Card>
+              </Badge.Ribbon>
+            </Col>
+          ))}
+        </Row>
+      </Layout.Content>
+    </Layout>
   );
 }
