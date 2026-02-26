@@ -32,12 +32,28 @@ type ModuleEntry = {
 
 const MODULES: ModuleEntry[] = [
   {
-    key: "cms",
+    key: "crm",
     name: "企业内容管理系统",
     description: "左侧菜单导航，右侧内容区，用于企业级内容/配置管理。",
     kind: "cms",
     tags: ["企业", "后台", "Layout"],
-    href: "/m/cms",
+    href: "crm",
+  },
+  {
+    key: "ops",
+    name: "运维控制台",
+    description: "常用运维功能聚合：环境、发布、监控与告警。",
+    kind: "tool",
+    tags: ["工具", "内部"],
+    href: "ops",
+  },
+  {
+    key: "workspace",
+    name: "工作台",
+    description: "团队日常工作入口：消息、任务、常用链接与快捷操作。",
+    kind: "tool",
+    tags: ["工具", "协作"],
+    href: "workspace",
   },
   {
     key: "portal",
@@ -47,22 +63,6 @@ const MODULES: ModuleEntry[] = [
     tags: ["站点", "外部"],
     href: "https://nextjs.org/docs/app/getting-started/installation",
     openInNewTab: true,
-  },
-  {
-    key: "ops",
-    name: "运维控制台",
-    description: "常用运维功能聚合：环境、发布、监控与告警。",
-    kind: "tool",
-    tags: ["工具", "内部"],
-    href: "/m/ops",
-  },
-  {
-    key: "workspace",
-    name: "工作台",
-    description: "团队日常工作入口：消息、任务、常用链接与快捷操作。",
-    kind: "tool",
-    tags: ["工具", "协作"],
-    href: "/m/workspace",
   },
 ];
 
@@ -81,7 +81,8 @@ export default function HomePage() {
     return MODULES.filter((m) => {
       if (kind !== "all" && m.kind !== kind) return false;
       if (!kw) return true;
-      const hay = `${m.name} ${m.description} ${(m.tags ?? []).join(" ")}`.toLowerCase();
+      const hay =
+        `${m.name} ${m.description} ${(m.tags ?? []).join(" ")}`.toLowerCase();
       return hay.includes(kw);
     });
   }, [keyword, kind]);
@@ -98,11 +99,15 @@ export default function HomePage() {
         <Row gutter={[16, 16]} align="middle">
           <Col flex="auto">
             <Space orientation="vertical" size={2}>
-              <Typography.Title level={3} style={{ margin: 0, color: "#e6f0ff" }}>
+              <Typography.Title
+                level={3}
+                style={{ margin: 0, color: "#e6f0ff" }}
+              >
                 Nexus Platform
               </Typography.Title>
               <Typography.Text style={{ color: "rgba(230,240,255,.72)" }}>
-                选择一个模块进入：可以是独立站点，也可以是“左菜单 + 右内容”的企业系统。
+                选择一个模块进入：可以是独立站点，也可以是“左菜单 +
+                右内容”的企业系统。
               </Typography.Text>
             </Space>
           </Col>
@@ -114,7 +119,9 @@ export default function HomePage() {
           </Col>
         </Row>
 
-        <Divider style={{ margin: "16px 0", borderColor: "rgba(255,255,255,.12)" }} />
+        <Divider
+          style={{ margin: "16px 0", borderColor: "rgba(255,255,255,.12)" }}
+        />
 
         <Row gutter={[12, 12]} align="middle">
           <Col flex="auto">
@@ -146,9 +153,16 @@ export default function HomePage() {
         <Row gutter={[16, 16]}>
           {filtered.length === 0 ? (
             <Col span={24}>
-              <Card bordered={false} style={{ background: "rgba(255,255,255,.06)" }}>
+              <Card
+                bordered={false}
+                style={{ background: "rgba(255,255,255,.06)" }}
+              >
                 <Empty
-                  description={<span style={{ color: "rgba(230,240,255,.72)" }}>没有匹配的模块</span>}
+                  description={
+                    <span style={{ color: "rgba(230,240,255,.72)" }}>
+                      没有匹配的模块
+                    </span>
+                  }
                 />
               </Card>
             </Col>
@@ -156,11 +170,19 @@ export default function HomePage() {
 
           {filtered.map((m) => (
             <Col key={m.key} xs={24} sm={12} lg={8} xl={6}>
-              <Badge.Ribbon text={KIND_LABEL[m.kind]} color={m.kind === "cms" ? "geekblue" : "cyan"}>
+              <Badge.Ribbon
+                text={KIND_LABEL[m.kind]}
+                color={m.kind === "cms" ? "geekblue" : "cyan"}
+              >
                 <Card
                   hoverable
                   styles={{
-                    body: { minHeight: 150, display: "flex", flexDirection: "column", gap: 10 },
+                    body: {
+                      minHeight: 150,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                    },
                   }}
                   style={{
                     background: "rgba(255,255,255,.06)",
@@ -168,7 +190,10 @@ export default function HomePage() {
                   }}
                 >
                   <Space orientation="vertical" size={6} style={{ flex: 1 }}>
-                    <Typography.Title level={5} style={{ margin: 0, color: "#e6f0ff" }}>
+                    <Typography.Title
+                      level={5}
+                      style={{ margin: 0, color: "#e6f0ff" }}
+                    >
                       {m.name}
                     </Typography.Title>
                     <Typography.Paragraph
@@ -193,7 +218,12 @@ export default function HomePage() {
                     </Space>
                   </Space>
 
-                  <Divider style={{ margin: "6px 0", borderColor: "rgba(255,255,255,.10)" }} />
+                  <Divider
+                    style={{
+                      margin: "6px 0",
+                      borderColor: "rgba(255,255,255,.10)",
+                    }}
+                  />
 
                   {m.openInNewTab ? (
                     <a
@@ -205,7 +235,10 @@ export default function HomePage() {
                       打开模块 →
                     </a>
                   ) : (
-                    <Link href={m.href} style={{ color: "#8ab4ff", fontWeight: 600 }}>
+                    <Link
+                      href={m.href}
+                      style={{ color: "#8ab4ff", fontWeight: 600 }}
+                    >
                       进入模块 →
                     </Link>
                   )}
