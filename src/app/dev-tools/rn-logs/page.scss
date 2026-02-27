@@ -8,14 +8,45 @@
 
   .rn-debug-logs-toolbar {
     .ant-card-body {
-      padding: 16px;
+      padding: 12px;
     }
   }
 
   .rn-debug-logs-content {
     flex: 1;
     .ant-card-body {
-      padding: 16px;
+      padding: 12px;
+      height: 100%;
+    }
+
+    &-container {
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      font-size: 13px;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      line-height: 1.6;
+      color: #d4d4d4;
+      background: #1e1e1e;
+      box-sizing: border-box;
+      overflow: hidden auto;
+
+      &::-webkit-scrollbar {
+        width: 12px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #252526;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #424242;
+        border-radius: 6px;
+
+        &:hover {
+          background: #4e4e4e;
+        }
+      }
     }
 
     .rn-debug-logs-empty {

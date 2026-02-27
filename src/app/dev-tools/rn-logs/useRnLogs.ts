@@ -2,7 +2,7 @@ import { useState } from "react";
 const useRnLogs = () => {
   const isConnecting = false;
   const isConnected = false;
-  const filteredLogs = true
+  const filteredLogs:Array<[]> = []
   const [port, setPort] = useState<number>(3000);
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [searchText, setSearchText] = useState<string>("");
