@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "WS_ENV=test next dev",
+    "dev:dev": "WS_ENV=dev next dev",
+    "dev:test": "WS_ENV=test next dev",
+    "dev:prod": "WS_ENV=prod next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -33,6 +36,7 @@
     "react-query": "^3.39.3",
     "react-virtualized": "^9.22.6",
     "recharts": "^3.7.0",
+    "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "zustand": "^5.0.11"
   },
