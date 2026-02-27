@@ -84,18 +84,19 @@ const config = defineConfig([
       "react/jsx-boolean-value": ["error", "never"],
       "react/self-closing-comp": "error",
       "react/jsx-sort-props": [
-        "error",
+        "warn",
         {
           callbacksLast: true,
           shorthandFirst: true,
           ignoreCase: true,
           reservedFirst: true,
+          noSortAlphabetically: true,
         },
       ],
 
       // ========= TypeScript 严格规则 =========
       "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/explicit-module-boundary-types": "error",
+      "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/explicit-member-accessibility": [
         "error",
         {
@@ -125,13 +126,13 @@ const config = defineConfig([
       ],
 
       "@typescript-eslint/explicit-function-return-type": [
-        "error",
+        "warn",
         {
           allowExpressions: true,
           allowTypedFunctionExpressions: true,
         },
       ],
-      "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+      "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/consistent-type-imports": [
         "error",
         {
@@ -164,25 +165,29 @@ const config = defineConfig([
 
       "@typescript-eslint/naming-convention": [
         "error",
-        // {
-        //   selector: "interface",
-        //   format: ["PascalCase"],
-        //   prefix: ["I"],
-        //   filter: {
-        //     regex:
-        //       "^(ImportMeta|ImportMetaEnv|NodeJS|Window|Document|HTMLElement|ReactBarcodeProps|QRCodeProps)$",
-        //     match: false,
-        //   },
-        // },
-        // {
-        //   selector: "typeAlias",
-        //   format: ["PascalCase"],
-        // },
-        // {
-        //   selector: "enum",
-        //   format: ["PascalCase"],
-        //   prefix: ["E"],
-        // },
+        {
+          selector: "variable",
+          format: ["camelCase", "PascalCase", "UPPER_CASE"],
+          leadingUnderscore: "allow",
+        },
+        {
+          selector: "function",
+          format: ["camelCase", "PascalCase"],
+          leadingUnderscore: "allow",
+        },
+        {
+          selector: "parameter",
+          format: ["camelCase"],
+          leadingUnderscore: "allow",
+        },
+        {
+          selector: "typeLike",
+          format: ["PascalCase"],
+        },
+        {
+          selector: "enum",
+          format: ["PascalCase"],
+        },
       ],
       "@typescript-eslint/member-ordering": [
         "error",
@@ -287,6 +292,14 @@ const config = defineConfig([
       "comma-dangle": "off",
       "arrow-body-style": "off",
       "prefer-arrow-callback": "off",
+    },
+  },
+  // Next App Router 目录：不强制写组件/页面的返回类型，也不启用 react-refresh 的限制
+  {
+    files: ["src/app/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "react-refresh/only-export-components": "off",
     },
   },
   {

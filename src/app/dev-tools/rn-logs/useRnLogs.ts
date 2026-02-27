@@ -1,16 +1,17 @@
 import { useState } from "react";
+
 const useRnLogs = () => {
   const isConnecting = false;
   const isConnected = false;
-  const filteredLogs:Array<[]> = []
+  const filteredLogs: unknown[] = [];
   const [port, setPort] = useState<number>(3000);
-  const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string>("all");
   const [searchText, setSearchText] = useState<string>("");
 
-  const handleConnectClick = () => {};
+  const handleConnectClick = (): void => undefined;
 
-  const handleClose = () => {};
-  const handleClearLogs = () => {};
+  const handleClose = (): void => undefined;
+  const handleClearLogs = (): void => undefined;
 
   return {
     isConnecting,
