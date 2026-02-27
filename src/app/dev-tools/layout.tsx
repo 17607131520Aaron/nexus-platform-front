@@ -77,11 +77,7 @@ const DevToolsLayout = ({ children }: { children: ReactNode }) => {
           items={MENU_ITEMS}
           onClick={({ key }) => {
             const k = key as string;
-            console.log('====================================');
-            console.log(k,'k');
-            console.log('====================================');
             if (k.startsWith("/dev-tools/")) router.push(k)
-            console.log(k, "kkkk");
           }}
         />
       </Sider>

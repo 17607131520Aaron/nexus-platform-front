@@ -1,0 +1,31 @@
+.rn-debug-logs {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+
+  .rn-debug-logs-toolbar {
+    .ant-card-body {
+      padding: 16px;
+    }
+  }
+
+  .rn-debug-logs-content {
+    flex: 1;
+    .ant-card-body {
+      padding: 16px;
+    }
+
+    .rn-debug-logs-empty {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      min-height: 400px;
+      color: #858585;
+    }
+  }
+}
