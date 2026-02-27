@@ -2,24 +2,8 @@
 
 import { useRef, useEffect } from "react";
 
-import {
-  ClearOutlined,
-  DisconnectOutlined,
-  ReloadOutlined,
-  StopOutlined,
-} from "@ant-design/icons";
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  InputNumber,
-  Select,
-  Space,
-  Spin,
-  Tooltip,
-  Typography,
-} from "antd";
+import { ClearOutlined, DisconnectOutlined, ReloadOutlined, StopOutlined } from "@ant-design/icons";
+import { Badge, Button, Card, Input, InputNumber, Select, Space, Spin, Tooltip, Typography } from "antd";
 
 import { levelOptions } from "./constants";
 import useRnLogs from "./useRnLogs";
@@ -70,10 +54,7 @@ const RnLogsPage = () => {
                 <Text type="secondary">连接中...</Text>
               </Space>
             ) : (
-              <Badge
-                status={isConnected ? "success" : "error"}
-                text={isConnected ? "已连接" : "未连接"}
-              />
+              <Badge status={isConnected ? "success" : "error"} text={isConnected ? "已连接" : "未连接"} />
             )}
           </Space>
 
@@ -95,23 +76,13 @@ const RnLogsPage = () => {
 
           <Space>
             <Tooltip title="连接">
-              <Button
-                icon={<ReloadOutlined />}
-                loading={isConnecting}
-                type="primary"
-                onClick={handleConnectClick}
-              >
+              <Button icon={<ReloadOutlined />} loading={isConnecting} type="primary" onClick={handleConnectClick}>
                 {isConnected ? "重连" : "连接"}
               </Button>
             </Tooltip>
 
             <Tooltip title="关闭连接">
-              <Button
-                danger
-                disabled={!isConnected && !isConnecting}
-                icon={<StopOutlined />}
-                onClick={handleClose}
-              >
+              <Button danger disabled={!isConnected && !isConnecting} icon={<StopOutlined />} onClick={handleClose}>
                 关闭
               </Button>
             </Tooltip>
@@ -136,9 +107,7 @@ const RnLogsPage = () => {
               placeholder="搜索日志..."
               style={{ width: 400 }}
               value={searchText}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setSearchText(e.target.value)
-              }
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
             />
           </Space>
         </Space>
@@ -149,13 +118,9 @@ const RnLogsPage = () => {
             <div />
           ) : (
             <div className="rn-debug-logs-empty">
-              <DisconnectOutlined
-                style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }}
-              />
+              <DisconnectOutlined style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }} />
               <Text type="secondary">
-                {isConnected
-                  ? "已连接，等待日志输出..."
-                  : "未连接，请点击连接按钮连接到 Metro bundler"}
+                {isConnected ? "已连接，等待日志输出..." : "未连接，请点击连接按钮连接到 Metro bundler"}
               </Text>
               <Text style={{ fontSize: "12px", marginTop: 8 }} type="secondary">
                 默认端口: {3000} (日志服务器)
@@ -181,14 +146,11 @@ const RnLogsPage = () => {
                       marginTop: 4,
                     }}
                   >
-                    React Native 的 console.log 默认不会自动通过 Metro bundler
-                    的 logger WebSocket 发送。
+                    React Native 的 console.log 默认不会自动通过 Metro bundler 的 logger WebSocket 发送。
                     <br />
-                    如需捕获 JS 日志，请在 React Native
-                    应用中添加日志拦截器来转发 console.log 输出。
+                    如需捕获 JS 日志，请在 React Native 应用中添加日志拦截器来转发 console.log 输出。
                     <br />
-                    可参考 storeverserepo-app/src/utils/devWsLogger.ts
-                    的实现方式。
+                    可参考 storeverserepo-app/src/utils/devWsLogger.ts 的实现方式。
                   </Text>
                 </div>
               )}
