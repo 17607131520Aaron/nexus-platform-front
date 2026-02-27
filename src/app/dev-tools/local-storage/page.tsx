@@ -3,7 +3,7 @@
 import { Typography } from "antd";
 
 const LocalStoragePage = () => {
-  <>
+  return  <>
     <Typography.Title level={5}>本地缓存检查器</Typography.Title>
     <Typography.Paragraph className="dev-tools-description">
       浏览和搜索 RN 端本地存储的数据（如 AsyncStorage

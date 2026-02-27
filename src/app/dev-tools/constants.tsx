@@ -14,7 +14,7 @@ export type DevToolsMenuItem = Required<MenuProps>["items"][number];
 export const MENU_ITEMS: NonNullable<MenuProps["items"]> = [
   //首页
   {
-    key: "home",
+    key: "/dev-tools/home",
     icon: <HomeOutlined />,
     label: "首页",
   },

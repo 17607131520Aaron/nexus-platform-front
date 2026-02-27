@@ -3,6 +3,7 @@
 import { ReactNode, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { MenuProps } from "antd";
+import { AppstoreOutlined } from "@ant-design/icons";
 import { Layout, Menu, Typography } from "antd";
 
 import { MENU_ITEMS } from "./constants";
@@ -41,37 +42,51 @@ const DevToolsLayout = ({ children }: { children: ReactNode }) => {
       const children = getItemChildren(cur);
       if (children.length) stack.push(...children);
     }
-    return "home";
+    return "/dev-tools/home";
   }, [pathname]);
 
   return (
     <Layout className="dev-tools-page">
-      <Sider width={240} theme="light" className="dev-tools-sider">
-        <div className="dev-tools-sider-header">
-          <span className="dev-tools-sider-logo" />
-          <span className="dev-tools-sider-title">工程师调试工具</span>
-        </div>
-
+      <Sider
+        className="dev-tools-sider"
+        collapsible
+        breakpoint="md"
+        collapsed={false}
+        collapsedWidth={80}
+        trigger={null}
+        width={240}
+        onBreakpoint={(broken) => {
+          console.log(broken, "broken");
+        }}
+      >
+        <Header>
+          <div className="dev-tools-sider-header">
+            <div className="dev-tools-sider-header-icon">
+              <AppstoreOutlined />
+            </div>
+            <span className="dev-tools-sider-header-title">
+              不知道叫啥的某系统
+            </span>
+          </div>
+        </Header>
         <Menu
           mode="inline"
+          className="dev-tools-sider-menu"
+          theme="light"
           selectedKeys={[selectedKey]}
-          className="dev-tools-menu"
-          defaultOpenKeys={["rn-tools", "data-tools"]}
+          items={MENU_ITEMS}
           onClick={({ key }) => {
             const k = key as string;
-            if (k.startsWith("/dev-tools/")) router.push(k);
+            console.log('====================================');
+            console.log(k,'k');
+            console.log('====================================');
+            if (k.startsWith("/dev-tools/")) router.push(k)
+            console.log(k, "kkkk");
           }}
-          items={MENU_ITEMS}
         />
       </Sider>
-
-      <Layout className="dev-tools-main">
-        <Header className="dev-tools-header">
-          <Typography.Title level={4} className="dev-tools-title">
-            调试工作台
-          </Typography.Title>
-        </Header>
-
+      <Layout>
+        <Header></Header>
         <Content className="dev-tools-content">
           <div className="dev-tools-canvas">{children}</div>
         </Content>
