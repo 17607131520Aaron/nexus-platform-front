@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+
 import {
   Badge,
   Button,
@@ -17,8 +17,10 @@ import {
   Tag,
   Typography,
 } from "antd";
-import type { ModuleEntry, ModuleKind } from "@/services/modules";
+import Link from "next/link";
+
 import { fetchModules } from "@/api/modules";
+import type { ModuleEntry, ModuleKind } from "@/services/modules";
 
 const KIND_LABEL: Record<ModuleKind, string> = {
   site: "站点",
@@ -42,8 +44,8 @@ export default function HomePage() {
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
     return modules.filter((m) => {
-      if (kind !== "all" && m.kind !== kind) return false;
-      if (!kw) return true;
+      if (kind !== "all" && m.kind !== kind) {return false;}
+      if (!kw) {return true;}
       const hay =
         `${m.name} ${m.description} ${(m.tags ?? []).join(" ")}`.toLowerCase();
       return hay.includes(kw);
@@ -59,7 +61,7 @@ export default function HomePage() {
           height: "auto",
         }}
       >
-        <Row gutter={[16, 16]} align="middle">
+        <Row align="middle" gutter={[16, 16]}>
           <Col flex="auto">
             <Space orientation="vertical" size={2}>
               <Typography.Title
@@ -86,27 +88,27 @@ export default function HomePage() {
           style={{ margin: "16px 0", borderColor: "rgba(255,255,255,.12)" }}
         />
 
-        <Row gutter={[12, 12]} align="middle">
+        <Row align="middle" gutter={[12, 12]}>
           <Col flex="auto">
             <Input
+              allowClear
+              placeholder="搜索模块名称 / 描述 / 标签"
+              size="large"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="搜索模块名称 / 描述 / 标签"
-              allowClear
-              size="large"
             />
           </Col>
           <Col>
             <Segmented
-              size="large"
-              value={kind}
-              onChange={(v) => setKind(v as typeof kind)}
               options={[
                 { label: "全部", value: "all" },
                 { label: "站点", value: "site" },
                 { label: "企业系统", value: "cms" },
                 { label: "工具", value: "tool" },
               ]}
+              size="large"
+              value={kind}
+              onChange={(v) => setKind(v as typeof kind)}
             />
           </Col>
         </Row>
@@ -129,13 +131,17 @@ export default function HomePage() {
           ) : null}
 
           {filtered.map((m) => (
-            <Col key={m.key} xs={24} sm={12} lg={8} xl={6}>
+            <Col key={m.key} lg={8} sm={12} xl={6} xs={24}>
               <Badge.Ribbon
-                text={KIND_LABEL[m.kind]}
                 color={m.kind === "cms" ? "geekblue" : "cyan"}
+                text={KIND_LABEL[m.kind]}
               >
                 <Card
                   hoverable
+                  style={{
+                    background: "rgba(255,255,255,.06)",
+                    borderColor: "rgba(255,255,255,.10)",
+                  }}
                   styles={{
                     body: {
                       minHeight: 150,
@@ -143,10 +149,6 @@ export default function HomePage() {
                       flexDirection: "column",
                       gap: 10,
                     },
-                  }}
-                  style={{
-                    background: "rgba(255,255,255,.06)",
-                    borderColor: "rgba(255,255,255,.10)",
                   }}
                 >
                   <Space orientation="vertical" size={6} style={{ flex: 1 }}>
@@ -157,12 +159,12 @@ export default function HomePage() {
                       {m.name}
                     </Typography.Title>
                     <Typography.Paragraph
-                      style={{ margin: 0, color: "rgba(230,240,255,.72)" }}
                       ellipsis={{ rows: 2 }}
+                      style={{ margin: 0, color: "rgba(230,240,255,.72)" }}
                     >
                       {m.description}
                     </Typography.Paragraph>
-                    <Space size={[6, 6]} wrap>
+                    <Space wrap size={[6, 6]}>
                       {(m.tags ?? []).map((t) => (
                         <Tag
                           key={t}
@@ -188,9 +190,9 @@ export default function HomePage() {
                   {m.openInNewTab ? (
                     <a
                       href={m.href}
-                      target="_blank"
                       rel="noreferrer"
                       style={{ color: "#8ab4ff", fontWeight: 600 }}
+                      target="_blank"
                     >
                       打开模块 →
                     </a>

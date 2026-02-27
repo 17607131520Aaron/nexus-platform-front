@@ -1,0 +1,29 @@
+{
+  // 使用 Prettier 作为默认格式化器
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+
+  // 保存时自动执行 ESLint 修复
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ESLint 检查的文件类型（含 TS / TSX / JS / JSX）
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+
+  // 使用项目本地 ESLint
+  "eslint.options": {
+    "overrideConfigFile": "eslint.config.mjs"
+  },
+
+  // 关闭 VSCode 自带的缩进/格式规则，避免与 Prettier / ESLint 冲突
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+
+  // Stylelint（需要安装 stylelint VSCode 插件）
+  "stylelint.enable": true,
+  "stylelint.configFile": ".stylelintrc.cjs",
+  "stylelint.validate": ["css", "scss"]
+}
+

@@ -1,12 +1,11 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+
 import {
   ClearOutlined,
   DisconnectOutlined,
-  DownOutlined,
   ReloadOutlined,
-  RightOutlined,
   StopOutlined,
 } from "@ant-design/icons";
 import {
@@ -22,8 +21,8 @@ import {
   Typography,
 } from "antd";
 
-import useRnLogs from "./useRnLogs";
 import { levelOptions } from "./constants";
+import useRnLogs from "./useRnLogs";
 
 import "./page.scss";
 
@@ -147,7 +146,7 @@ const RnLogsPage = () => {
       <Card className="rn-debug-logs-content">
         <div ref={logsContainerRef} className="rn-debug-logs-content-container">
           {filteredLogs.length > 0 ? (
-            <div></div>
+            <div />
           ) : (
             <div className="rn-debug-logs-empty">
               <DisconnectOutlined

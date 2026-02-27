@@ -44,7 +44,7 @@
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
     "babel-plugin-react-compiler": "1.0.0",
-    "eslint": "^10.0.2",
+    "eslint": "^9.39.1",
     "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",

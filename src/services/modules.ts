@@ -2,7 +2,7 @@
 
 export type ModuleKind = "site" | "cms" | "tool";
 
-export type ModuleEntry = {
+export interface ModuleEntry {
   key: string;
   name: string;
   description: string;
@@ -10,7 +10,7 @@ export type ModuleEntry = {
   tags?: string[];
   href: string;
   openInNewTab?: boolean;
-};
+}
 
 // 先用本地 Mock 数据，后续可以替换成真实接口返回
 const MOCK_MODULES: ModuleEntry[] = [

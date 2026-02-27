@@ -1,12 +1,15 @@
 "use client";
 
-import { ReactNode, useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import type { MenuProps } from "antd";
+import type { ReactNode} from "react";
+import { useMemo } from "react";
+
 import { AppstoreOutlined } from "@ant-design/icons";
-import { Layout, Menu, Typography } from "antd";
+import { Layout, Menu } from "antd";
+import { usePathname, useRouter } from "next/navigation";
 
 import { MENU_ITEMS } from "./constants";
+
+import type { MenuProps } from "antd";
 import "./page.scss";
 
 const { Header, Sider, Content } = Layout;
@@ -34,13 +37,13 @@ const DevToolsLayout = ({ children }: { children: ReactNode }) => {
     const stack: MenuItem[] = [...MENU_ITEMS];
     while (stack.length) {
       const cur = stack.shift();
-      if (!isMenuItem(cur)) continue;
+      if (!isMenuItem(cur)) {continue;}
       const key = getItemKey(cur);
       if (key && key.startsWith("/dev-tools/")) {
-        if (pathname.startsWith(key)) return key;
+        if (pathname.startsWith(key)) {return key;}
       }
       const children = getItemChildren(cur);
-      if (children.length) stack.push(...children);
+      if (children.length) {stack.push(...children);}
     }
     return "/dev-tools/home";
   }, [pathname]);
@@ -48,9 +51,9 @@ const DevToolsLayout = ({ children }: { children: ReactNode }) => {
   return (
     <Layout className="dev-tools-page">
       <Sider
-        className="dev-tools-sider"
         collapsible
         breakpoint="md"
+        className="dev-tools-sider"
         collapsed={false}
         collapsedWidth={80}
         trigger={null}
@@ -64,25 +67,23 @@ const DevToolsLayout = ({ children }: { children: ReactNode }) => {
             <div className="dev-tools-sider-header-icon">
               <AppstoreOutlined />
             </div>
-            <span className="dev-tools-sider-header-title">
-              不知道叫啥的某系统
-            </span>
+            <span className="dev-tools-sider-header-title">不知道叫啥的某系统</span>
           </div>
         </Header>
         <Menu
-          mode="inline"
           className="dev-tools-sider-menu"
-          theme="light"
-          selectedKeys={[selectedKey]}
           items={MENU_ITEMS}
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          theme="light"
           onClick={({ key }) => {
             const k = key as string;
-            if (k.startsWith("/dev-tools/")) router.push(k)
+            if (k.startsWith("/dev-tools/")) {router.push(k);}
           }}
         />
       </Sider>
       <Layout>
-        <Header></Header>
+        <Header />
         <Content className="dev-tools-content">
           <div className="dev-tools-canvas">{children}</div>
         </Content>
