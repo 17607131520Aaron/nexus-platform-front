@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 
 import { fetchModules } from "@/api/modules";
-import type { ModuleEntry, ModuleKind } from "@/services/modules";
+import type { ModuleEntry, ModuleKind } from "@/api/modules";
 
 const KIND_LABEL: Record<ModuleKind, string> = {
   site: "站点",

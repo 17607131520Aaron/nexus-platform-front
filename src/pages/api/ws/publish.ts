@@ -1,6 +1,15 @@
-import type { NextApiRequest } from "next";
 import type { NextApiResponseWithSocket, PublishMessageInput } from "./socket";
-import { buildMessage, getOrCreateIo } from "./socket";
+import {
+  buildMessage,
+  checkRateLimit,
+  getGatewaySecurityConfig,
+  getOrCreateIo,
+  isRequestAuthorized,
+  isRequestOriginAllowed,
+  validatePublishMessageInput,
+} from "./socket";
+
+import type { NextApiRequest } from "next";
 
 type ApiResponse =
   | {
@@ -18,16 +27,34 @@ const handler = async (req: NextApiRequest, res: NextApiResponseWithSocket): Pro
     return;
   }
 
+  if (!isRequestOriginAllowed(req)) {
+    res.status(403).json({ ok: false, error: "Origin not allowed" });
+    return;
+  }
+
+  if (!isRequestAuthorized(req)) {
+    res.status(401).json({ ok: false, error: "Unauthorized" });
+    return;
+  }
+
   try {
     const input = req.body as PublishMessageInput | undefined;
+    const config = getGatewaySecurityConfig();
+    const rateLimitKey = `http:${req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "unknown"}`;
 
-    if (!input || typeof input.type !== "string" || input.type.trim() === "") {
-      res.status(400).json({ ok: false, error: "Field `type` is required" });
+    if (!checkRateLimit(rateLimitKey, config)) {
+      res.status(429).json({ ok: false, error: "Too Many Requests" });
+      return;
+    }
+
+    const validated = validatePublishMessageInput(input, config);
+    if (!validated.ok) {
+      res.status(400).json({ ok: false, error: validated.reason });
       return;
     }
 
     const io = getOrCreateIo(res);
-    const message = buildMessage(input);
+    const message = buildMessage(validated.value);
 
     io.emit("message", message);
 
@@ -43,4 +70,3 @@ const handler = async (req: NextApiRequest, res: NextApiResponseWithSocket): Pro
 };
 
 export default handler;
-

@@ -17,6 +17,29 @@ type ServerToClientEvents = Record<string, (...args: unknown[]) => unknown>;
 
 type ClientToServerEvents = Record<string, (...args: unknown[]) => unknown>;
 
+function readClientAuthToken(): string | undefined {
+  if (typeof document === "undefined") {
+    return undefined;
+  }
+
+  const cookies = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+
+  for (const cookie of cookies) {
+    const [key, ...rest] = cookie.split("=");
+    if (key === "auth_token") {
+      const value = rest.join("=").trim();
+      if (value) {
+        return decodeURIComponent(value);
+      }
+    }
+  }
+
+  return undefined;
+}
+
 const useRnLogs = () => {
   const [port, setPort] = useState<number>(DEFAULT_PORT);
   const [levelFilter, setLevelFilter] = useState<string>("all");
@@ -24,6 +47,11 @@ const useRnLogs = () => {
   const [logs, setLogs] = useState<LogItem[]>([]);
 
   const { url: socketUrl, path } = useMemo(() => getWsGatewayConfig(), []);
+  const authToken = useMemo(() => readClientAuthToken(), []);
+  const authConfig = useMemo(
+    () => (authToken ? ({ auth: { token: authToken } } as const) : {}),
+    [authToken],
+  );
 
   const { status, connected, emit, on, disconnect, reconnectAttempt, connect } = useSocket<
     ServerToClientEvents,
@@ -31,6 +59,7 @@ const useRnLogs = () => {
   >({
     url: socketUrl,
     path,
+    ...authConfig,
     autoConnect: false,
     reconnectionDelay: DEFAULT_RECONNECT_DELAY,
     reconnectionAttempts: 10,

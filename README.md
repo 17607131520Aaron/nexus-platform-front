@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexus Platform Frontend
 
-## Getting Started
+基于 Next.js 16 + React 19 的前端项目，包含：
 
-First, run the development server:
+- 模块门户首页（模块搜索/筛选）
+- `dev-tools` 工具区（RN 日志、网络调试等）
+- Socket.IO 网关与客户端通用 Hook
+
+## 本地启动
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+默认打开 `http://localhost:3000`。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 常用脚本
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm dev
+pnpm build
+pnpm start
+pnpm lint
+pnpm format
+pnpm stylelint
+```
 
-## Learn More
+## 项目架构
 
-To learn more about Next.js, take a look at the following resources:
+- 详细架构说明：`docs/architecture.md`
+- Socket 安全配置：`docs/ws-security.md`
+- Socket Hook 文档：`docs/useSocket.md`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 目录分层（核心）
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/app`: 页面与布局（UI 入口）
+- `src/api`: 面向页面的 API facade（薄层）
+- `src/domains`: 领域模型与用例（主业务层）
+- `src/services`: 兼容层/跨域能力（逐步收敛到 domains）
+- `src/hooks`: 复用 Hook
+- `src/pages/api`: Next API Route（如 WS 网关）
 
-## Deploy on Vercel
+## 环境变量（WS）
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+参考 `docs/ws-security.md`，重点包括：
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `WS_AUTH_REQUIRED`
+- `WS_AUTH_TOKEN` / `WS_AUTH_TOKENS`
+- `WS_ALLOWED_ORIGINS`
+- `WS_ALLOWED_MESSAGE_TYPES`
+- `WS_MAX_PAYLOAD_BYTES`
+- `WS_RATE_LIMIT_MAX`
+- `WS_RATE_LIMIT_WINDOW_MS`

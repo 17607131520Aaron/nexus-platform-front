@@ -13,6 +13,8 @@ import type {
 } from "./types";
 import { buildIoOptions, createSocketKey } from "./utils";
 
+type SocketListener = (...args: unknown[]) => void;
+
 function normalizeError(err: unknown): Error {
   if (err instanceof Error) {
     return err;
@@ -39,6 +41,7 @@ export function useSocket<
 
   const socketRef = useRef<Socket<ListenEvents, EmitEvents> | null>(null);
   const socketKeyRef = useRef<string | null>(null);
+  const listenersRef = useRef<Map<string, Set<SocketListener>>>(new Map());
   const mountedRef = useRef(false);
 
   const [status, setStatus] = useState<SocketStatus>("idle");
@@ -111,6 +114,17 @@ export function useSocket<
     socketRef.current = null;
     socketKeyRef.current = null;
   }, []);
+
+  const bindRegisteredListeners = useCallback(
+    (socket: Socket<ListenEvents, EmitEvents>): void => {
+      for (const [event, listeners] of listenersRef.current.entries()) {
+        for (const listener of listeners) {
+          socket.on(event as unknown as never, listener as unknown as never);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -198,6 +212,7 @@ export function useSocket<
     socket.io.on("reconnect", onReconnect);
     socket.io.on("reconnect_error", onReconnectError);
     socket.io.on("reconnect_failed", onReconnectFailed);
+    bindRegisteredListeners(socket);
 
     return () => {
       socket.off("connect", onConnect);
@@ -210,7 +225,16 @@ export function useSocket<
       cleanupSocket();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, socketKey, autoConnect, cleanupSocket, safeSetError, safeSetReconnectAttempt, safeSetStatus]);
+  }, [
+    enabled,
+    socketKey,
+    autoConnect,
+    bindRegisteredListeners,
+    cleanupSocket,
+    safeSetError,
+    safeSetReconnectAttempt,
+    safeSetStatus,
+  ]);
 
   const connect = useCallback((): void => {
     const socket = socketRef.current;
@@ -249,14 +273,35 @@ export function useSocket<
       event: E,
       listener: ListenEvents[E],
     ): (() => void) => {
-    const socket = socketRef.current;
-    if (!socket) {
-      return () => undefined;
-    }
-      socket.on(event as unknown as never, listener as unknown as never);
-    return () => {
-        socket.off(event as unknown as never, listener as unknown as never);
-    };
+      const eventKey = event as string;
+      const normalizedListener = listener as unknown as SocketListener;
+      const currentListeners = listenersRef.current.get(eventKey) ?? new Set<SocketListener>();
+
+      if (!listenersRef.current.has(eventKey)) {
+        listenersRef.current.set(eventKey, currentListeners);
+      }
+
+      if (!currentListeners.has(normalizedListener)) {
+        currentListeners.add(normalizedListener);
+        const socket = socketRef.current;
+        if (socket) {
+          socket.on(event as unknown as never, listener as unknown as never);
+        }
+      }
+
+      return () => {
+        const listeners = listenersRef.current.get(eventKey);
+        if (listeners) {
+          listeners.delete(normalizedListener);
+          if (listeners.size === 0) {
+            listenersRef.current.delete(eventKey);
+          }
+        }
+        const socket = socketRef.current;
+        if (socket) {
+          socket.off(event as unknown as never, listener as unknown as never);
+        }
+      };
     },
     [],
   );
@@ -266,15 +311,29 @@ export function useSocket<
       event: E,
       listener?: ListenEvents[E],
     ): void => {
-    const socket = socketRef.current;
-    if (!socket) {
-      return;
-    }
-    if (listener) {
+      const eventKey = event as string;
+      if (listener) {
+        const normalizedListener = listener as unknown as SocketListener;
+        const listeners = listenersRef.current.get(eventKey);
+        if (listeners) {
+          listeners.delete(normalizedListener);
+          if (listeners.size === 0) {
+            listenersRef.current.delete(eventKey);
+          }
+        }
+      } else {
+        listenersRef.current.delete(eventKey);
+      }
+
+      const socket = socketRef.current;
+      if (!socket) {
+        return;
+      }
+      if (listener) {
         socket.off(event as unknown as never, listener as unknown as never);
-    } else {
+      } else {
         socket.off(event as unknown as never);
-    }
+      }
     },
     [],
   );

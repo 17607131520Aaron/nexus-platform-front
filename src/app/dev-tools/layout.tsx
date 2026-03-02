@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode} from "react";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 
 import { AppstoreOutlined } from "@ant-design/icons";
@@ -32,6 +32,7 @@ const getItemChildren = (item: Exclude<MenuItem, null>): MenuItem[] => {
 const DevToolsLayout = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const currentPathname = pathname ?? "";
 
   const selectedKey = useMemo(() => {
     const stack: MenuItem[] = [...MENU_ITEMS];
@@ -40,13 +41,13 @@ const DevToolsLayout = ({ children }: { children: ReactNode }) => {
       if (!isMenuItem(cur)) {continue;}
       const key = getItemKey(cur);
       if (key && key.startsWith("/dev-tools/")) {
-        if (pathname.startsWith(key)) {return key;}
+        if (currentPathname.startsWith(key)) {return key;}
       }
       const children = getItemChildren(cur);
       if (children.length) {stack.push(...children);}
     }
     return "/dev-tools/home";
-  }, [pathname]);
+  }, [currentPathname]);
 
   return (
     <Layout className="dev-tools-page">
