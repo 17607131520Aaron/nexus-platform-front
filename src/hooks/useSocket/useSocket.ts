@@ -14,6 +14,31 @@ import type {
 import { buildIoOptions, createSocketKey } from "./utils";
 
 type SocketListener = (...args: unknown[]) => void;
+type QueuedEmitItem = {
+  event: string;
+  args: unknown[];
+  mode: "fire-and-forget" | "ack";
+  ackTimeout: number;
+  resolve?: (value: unknown) => void;
+  reject?: (error: Error) => void;
+};
+
+const DEFAULT_ACK_TIMEOUT = 10000;
+const DEFAULT_MAX_OFFLINE_QUEUE_SIZE = 100;
+const DEFAULT_AUTH_ERROR_PATTERN = /(unauthorized|forbidden|401|403)/i;
+
+function isSocketActive<ListenEvents extends ServerToClientEvents, EmitEvents extends ClientToServerEvents>(
+  socket: Socket<ListenEvents, EmitEvents> | null,
+): boolean {
+  if (!socket) {
+    return false;
+  }
+  return socket.connected || socket.active;
+}
+
+function defaultIsAuthError(error: Error): boolean {
+  return DEFAULT_AUTH_ERROR_PATTERN.test(error.message);
+}
 
 function normalizeError(err: unknown): Error {
   if (err instanceof Error) {
@@ -36,12 +61,19 @@ export function useSocket<
 >(config: UseSocketConfig<ListenEvents, EmitEvents, Auth>): UseSocketResult<ListenEvents, EmitEvents> {
   const enabled = config.enabled ?? true;
   const autoConnect = config.autoConnect ?? true;
+  const ackTimeout = config.ackTimeout ?? DEFAULT_ACK_TIMEOUT;
+  const offlineQueueEnabled = config.offlineQueue ?? true;
+  const maxOfflineQueueSize = config.maxOfflineQueueSize ?? DEFAULT_MAX_OFFLINE_QUEUE_SIZE;
+  const isAuthError = config.isAuthError ?? defaultIsAuthError;
 
   const socketKey = useMemo(() => createSocketKey(config), [config]);
 
   const socketRef = useRef<Socket<ListenEvents, EmitEvents> | null>(null);
   const socketKeyRef = useRef<string | null>(null);
   const listenersRef = useRef<Map<string, Set<SocketListener>>>(new Map());
+  const queueRef = useRef<QueuedEmitItem[]>([]);
+  const runtimeAuthRef = useRef<Auth | undefined>(config.auth);
+  const authRefreshingRef = useRef(false);
   const mountedRef = useRef(false);
 
   const [status, setStatus] = useState<SocketStatus>("idle");
@@ -55,6 +87,8 @@ export function useSocket<
     onReconnectAttempt: config.onReconnectAttempt,
     onReconnectFailed: config.onReconnectFailed,
     onReconnect: config.onReconnect,
+    onAuthRefreshFailed: config.onAuthRefreshFailed,
+    onQueueDrain: config.onQueueDrain,
   });
 
   useEffect(() => {
@@ -65,6 +99,8 @@ export function useSocket<
       onReconnectAttempt: config.onReconnectAttempt,
       onReconnectFailed: config.onReconnectFailed,
       onReconnect: config.onReconnect,
+      onAuthRefreshFailed: config.onAuthRefreshFailed,
+      onQueueDrain: config.onQueueDrain,
     };
   }, [
     config.onConnect,
@@ -73,7 +109,13 @@ export function useSocket<
     config.onReconnectAttempt,
     config.onReconnectFailed,
     config.onReconnect,
+    config.onAuthRefreshFailed,
+    config.onQueueDrain,
   ]);
+
+  useEffect(() => {
+    runtimeAuthRef.current = config.auth;
+  }, [config.auth]);
 
   const safeSetStatus = useCallback((next: SocketStatus): void => {
     if (!mountedRef.current) {
@@ -104,9 +146,7 @@ export function useSocket<
 
     try {
       socket.removeAllListeners();
-      socket.io.removeAllListeners();
       socket.disconnect();
-      socket.close();
     } catch {
       // ignore cleanup errors
     }
@@ -115,27 +155,143 @@ export function useSocket<
     socketKeyRef.current = null;
   }, []);
 
-  const bindRegisteredListeners = useCallback(
-    (socket: Socket<ListenEvents, EmitEvents>): void => {
-      for (const [event, listeners] of listenersRef.current.entries()) {
-        for (const listener of listeners) {
-          socket.on(event as unknown as never, listener as unknown as never);
-        }
+  const bindRegisteredListeners = useCallback((socket: Socket<ListenEvents, EmitEvents>): void => {
+    for (const [event, listeners] of listenersRef.current.entries()) {
+      for (const listener of listeners) {
+        socket.on(event as unknown as never, listener as unknown as never);
+      }
+    }
+  }, []);
+
+  const emitWithAckRaw = useCallback(
+    <Ack>(socket: Socket<ListenEvents, EmitEvents>, event: string, args: unknown[], timeoutMs: number): Promise<Ack> =>
+      new Promise<Ack>((resolve, reject) => {
+        (socket.timeout(timeoutMs).emit as unknown as (...inner: unknown[]) => void)(
+          event,
+          ...args,
+          (err: Error | null, response: Ack) => {
+            if (err) {
+              reject(normalizeError(err));
+              return;
+            }
+            resolve(response);
+          },
+        );
+      }),
+    [],
+  );
+
+  const enqueueEmit = useCallback(
+    (item: QueuedEmitItem): void => {
+      queueRef.current.push(item);
+      if (queueRef.current.length <= maxOfflineQueueSize) {
+        return;
+      }
+
+      const dropped = queueRef.current.shift();
+      if (dropped?.mode === "ack" && dropped.reject) {
+        dropped.reject(new Error("Offline queue is full, message dropped"));
       }
     },
-    [],
+    [maxOfflineQueueSize],
+  );
+
+  const clearQueue = useCallback((reason: string): void => {
+    if (queueRef.current.length === 0) {
+      return;
+    }
+    const pending = queueRef.current.splice(0, queueRef.current.length);
+    for (const item of pending) {
+      if (item.mode === "ack") {
+        item.reject?.(new Error(reason));
+      }
+    }
+  }, []);
+
+  const drainQueue = useCallback(
+    async (socket: Socket<ListenEvents, EmitEvents>): Promise<void> => {
+      if (!socket.connected || queueRef.current.length === 0) {
+        return;
+      }
+
+      const pending = queueRef.current.splice(0, queueRef.current.length);
+      let drainedCount = 0;
+
+      for (const item of pending) {
+        try {
+          if (item.mode === "ack") {
+            const response = await emitWithAckRaw(socket, item.event, item.args, item.ackTimeout);
+            item.resolve?.(response);
+          } else {
+            (socket.emit as unknown as (...inner: unknown[]) => void)(item.event, ...item.args);
+          }
+          drainedCount += 1;
+        } catch (err) {
+          const error = normalizeError(err);
+          if (item.mode === "ack") {
+            item.reject?.(error);
+          } else if (offlineQueueEnabled) {
+            enqueueEmit(item);
+            break;
+          }
+        }
+      }
+
+      if (drainedCount > 0) {
+        callbacksRef.current.onQueueDrain?.(drainedCount);
+      }
+    },
+    [emitWithAckRaw, enqueueEmit, offlineQueueEnabled],
+  );
+
+  const tryRefreshAuth = useCallback(
+    async (socket: Socket<ListenEvents, EmitEvents>, error: Error): Promise<boolean> => {
+      const refreshAuth = config.refreshAuth;
+      if (!refreshAuth || !isAuthError(error)) {
+        return false;
+      }
+      if (authRefreshingRef.current) {
+        return true;
+      }
+
+      authRefreshingRef.current = true;
+      safeSetStatus("reconnecting");
+
+      try {
+        const nextAuth = await refreshAuth();
+        if (!nextAuth) {
+          throw new Error("Auth refresh returned empty result");
+        }
+        runtimeAuthRef.current = nextAuth;
+        socket.auth = nextAuth as unknown as Record<string, unknown>;
+        socket.connect();
+        return true;
+      } catch (refreshErr) {
+        const normalized = normalizeError(refreshErr);
+        safeSetError(normalized);
+        callbacksRef.current.onError?.(normalized);
+        callbacksRef.current.onAuthRefreshFailed?.(normalized);
+        safeSetStatus("error");
+        return true;
+      } finally {
+        authRefreshingRef.current = false;
+      }
+    },
+    [config.refreshAuth, isAuthError, safeSetError, safeSetStatus],
   );
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
+      clearQueue("Socket is unmounted");
       mountedRef.current = false;
     };
-  }, []);
+  }, [clearQueue]);
 
   useEffect(() => {
     if (!enabled) {
       cleanupSocket();
+      clearQueue("Socket is disabled");
       safeSetError(null);
       safeSetReconnectAttempt(0);
       safeSetStatus("idle");
@@ -149,7 +305,13 @@ export function useSocket<
 
     cleanupSocket();
 
-    const options: Partial<ManagerOptions & SocketOptions> = buildIoOptions(config);
+    const resolvedConfig: UseSocketConfig<ListenEvents, EmitEvents, Auth> = {
+      ...config,
+      ...(typeof runtimeAuthRef.current === "undefined"
+        ? {}
+        : { auth: runtimeAuthRef.current }),
+    };
+    const options: Partial<ManagerOptions & SocketOptions> = buildIoOptions(resolvedConfig);
     const socket = io(config.url, options) as Socket<ListenEvents, EmitEvents>;
     socketRef.current = socket;
     socketKeyRef.current = socketKey;
@@ -163,6 +325,7 @@ export function useSocket<
       safeSetReconnectAttempt(0);
       safeSetStatus("connected");
       callbacksRef.current.onConnect?.(socket);
+      void drainQueue(socket);
     };
 
     const onDisconnect = (reason: string): void => {
@@ -177,6 +340,7 @@ export function useSocket<
       callbacksRef.current.onError?.(e);
       // 如果启用了自动重连，状态更贴近“正在重试”
       safeSetStatus(socket.io.opts.reconnection ? "reconnecting" : "error");
+      void tryRefreshAuth(socket, e);
     };
 
     const onReconnectAttempt = (attempt: number): void => {
@@ -190,6 +354,7 @@ export function useSocket<
       safeSetReconnectAttempt(attempt);
       safeSetStatus("connected");
       callbacksRef.current.onReconnect?.(attempt);
+      void drainQueue(socket);
     };
 
     const onReconnectError = (err: unknown): void => {
@@ -230,15 +395,21 @@ export function useSocket<
     socketKey,
     autoConnect,
     bindRegisteredListeners,
+    clearQueue,
     cleanupSocket,
+    drainQueue,
     safeSetError,
     safeSetReconnectAttempt,
     safeSetStatus,
+    tryRefreshAuth,
   ]);
 
   const connect = useCallback((): void => {
     const socket = socketRef.current;
     if (!socket) {
+      return;
+    }
+    if (isSocketActive(socket)) {
       return;
     }
     safeSetStatus("connecting");
@@ -250,29 +421,62 @@ export function useSocket<
     if (!socket) {
       return;
     }
+    if (!isSocketActive(socket)) {
+      safeSetStatus("disconnected");
+      return;
+    }
     socket.disconnect();
     safeSetStatus("disconnected");
   }, [safeSetStatus]);
 
   const emit = useCallback(
-    <E extends Extract<keyof EmitEvents, string>>(
+    <E extends Extract<keyof EmitEvents, string>>(event: E, ...args: Parameters<EmitEvents[E]>): void => {
+      const socket = socketRef.current;
+      if (socket?.connected) {
+        socket.emit(event, ...args);
+        return;
+      }
+      if (!offlineQueueEnabled) {
+        return;
+      }
+      enqueueEmit({
+        event,
+        args: args as unknown[],
+        mode: "fire-and-forget",
+        ackTimeout,
+      });
+    },
+    [ackTimeout, enqueueEmit, offlineQueueEnabled],
+  );
+
+  const emitWithAck = useCallback(
+    <E extends Extract<keyof EmitEvents, string>, Ack = unknown>(
       event: E,
       ...args: Parameters<EmitEvents[E]>
-    ): void => {
-    const socket = socketRef.current;
-    if (!socket) {
-      return;
-    }
-    socket.emit(event, ...args);
+    ): Promise<Ack> => {
+      const socket = socketRef.current;
+      if (socket?.connected) {
+        return emitWithAckRaw<Ack>(socket, event, args as unknown[], ackTimeout);
+      }
+      if (!offlineQueueEnabled) {
+        return Promise.reject(new Error("Socket is not connected"));
+      }
+      return new Promise<Ack>((resolve, reject) => {
+        enqueueEmit({
+          event,
+          args: args as unknown[],
+          mode: "ack",
+          ackTimeout,
+          resolve: (value: unknown) => resolve(value as Ack),
+          reject,
+        });
+      });
     },
-    [],
+    [ackTimeout, emitWithAckRaw, enqueueEmit, offlineQueueEnabled],
   );
 
   const on = useCallback(
-    <E extends Extract<keyof ListenEvents, string>>(
-      event: E,
-      listener: ListenEvents[E],
-    ): (() => void) => {
+    <E extends Extract<keyof ListenEvents, string>>(event: E, listener: ListenEvents[E]): (() => void) => {
       const eventKey = event as string;
       const normalizedListener = listener as unknown as SocketListener;
       const currentListeners = listenersRef.current.get(eventKey) ?? new Set<SocketListener>();
@@ -307,10 +511,7 @@ export function useSocket<
   );
 
   const off = useCallback(
-    <E extends Extract<keyof ListenEvents, string>>(
-      event: E,
-      listener?: ListenEvents[E],
-    ): void => {
+    <E extends Extract<keyof ListenEvents, string>>(event: E, listener?: ListenEvents[E]): void => {
       const eventKey = event as string;
       if (listener) {
         const normalizedListener = listener as unknown as SocketListener;
@@ -350,6 +551,7 @@ export function useSocket<
     connect,
     disconnect,
     emit,
+    emitWithAck,
     on,
     off,
   };

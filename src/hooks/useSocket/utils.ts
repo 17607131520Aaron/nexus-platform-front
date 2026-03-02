@@ -65,6 +65,7 @@ type SocketKeyShape = {
   url: string;
   enabled: boolean;
   autoConnect: boolean;
+  reconnection: boolean;
   timeout: number;
   reconnectionAttempts: number;
   reconnectionDelay: number;
@@ -98,6 +99,7 @@ export function createSocketKey<
     url: config.url,
     enabled: config.enabled ?? true,
     autoConnect: config.autoConnect ?? true,
+    reconnection: config.reconnection ?? true,
     timeout: config.timeout ?? DEFAULT_TIMEOUT,
     reconnectionAttempts:
       config.reconnectionAttempts ?? DEFAULT_RECONNECTION_ATTEMPTS,
@@ -149,11 +151,12 @@ export function buildIoOptions<
     config.reconnectionAttempts ?? DEFAULT_RECONNECTION_ATTEMPTS;
   const reconnectionDelay =
     config.reconnectionDelay ?? DEFAULT_RECONNECTION_DELAY;
+  const reconnection = config.reconnection ?? true;
 
   const base: UseSocketIoOptions = {};
   base.autoConnect = (config.autoConnect ?? true) && (config.enabled ?? true);
   base.timeout = timeout;
-  base.reconnection = true;
+  base.reconnection = reconnection;
   base.reconnectionAttempts = reconnectionAttempts;
   base.reconnectionDelay = reconnectionDelay;
 
